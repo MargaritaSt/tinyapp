@@ -1,3 +1,4 @@
+//hello
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -62,9 +63,6 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
-
-
-
 
 
 app.get("/hello", (req, res) => {
