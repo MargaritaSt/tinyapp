@@ -10,7 +10,6 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 function generateRandomString() {
   return Math.random().toString(36).substr(2,6);
-
 };
 
 const urlDatabase = {
@@ -36,6 +35,17 @@ app.get("/urls/new" , (req, res) => {
   res.render("urls_new");
 });
 
+app.post("/urls/:shortURL/update", (req, res) => {
+  urlDatabase[req.params.shortURL] = req.body.longURL;
+  //res.json(req.body);
+  res.redirect("/urls");
+});
+ 
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
+});
+
 app.post("/urls", (req, res) => {
   let newUrl = generateRandomString();
   urlDatabase[newUrl] = req.body.longURL;
@@ -53,11 +63,8 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  console.log(urlDatabase);
-  res.redirect("/urls");
-});
+
+
 
 
 app.get("/hello", (req, res) => {
