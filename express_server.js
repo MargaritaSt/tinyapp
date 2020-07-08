@@ -41,7 +41,6 @@ app.post("/urls", (req, res) => {
   urlDatabase[newUrl] = req.body.longURL;
   //console.log(urlDatabase);  // Log the POST request body to the console
   res.redirect(`/urls/${newUrl}`);
-  //res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -55,12 +54,9 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
- // console.log(req);
-  console.log('req.body ===>', req);
-  //delete urlDatabase.shortURL;
- // console.log(urlDatabase);
-  res.send("Ok");
-
+  delete urlDatabase[req.params.shortURL];
+  console.log(urlDatabase);
+  res.redirect("/urls");
 });
 
 
