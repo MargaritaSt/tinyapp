@@ -50,20 +50,18 @@ const  generateRandomString = function() {
  // req.currentUser = users[req.session[id]];
  // next();
 //});
-const findeUserByEmail = function(email) {
-  
-  for (let userId in users) {
-    if (users[userId].email === email) {
-      return users[userId];
+const findeUserByEmail = function(email, dataBase) {
+  for (let userId in dataBase) {
+    if (dataBase[userId].email === email) {
+      return dataBase[userId];
     }
   }
   return false;
 };
 
 const authenticateUser = function(email, password) {
-  const userId = findeUserByEmail(email);
+  const userId = findeUserByEmail(email, users);
   let passmatch;
-  console.log(userId, email, password);
   if (password !== "" && userId !== false) {
     passmatch  = bcrypt.compareSync(password, userId.password);
   }
@@ -82,7 +80,6 @@ const addNewUser = function(email, password) {
     password: hashedPassword
   };
   users[userId] = newUser;
-  console.log(hashedPassword);
   return userId;
   
 };
@@ -95,7 +92,6 @@ const dbForId = function(userId) {
       newObject[url] = urlDatabase[url];
     }
   }
-  console.log(newObject);
   return (newObject);
 };
 
@@ -111,11 +107,9 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  //const newDB = dbForId(req.cookies["user_id"]);
   const newDB = dbForId(req.session["user_id"]);
   let templateVars = {
     urls: newDB, //This is filtered by signed userID urlDatabase objectvto display the URLS for the specific user only
-    //userId: req.cookies["user_id"],
     userId: req.session["user_id"],
     users: users
   };
@@ -176,9 +170,7 @@ app.post("/login", (req, res) => {
   const {email, password} = req.body;
   const user = authenticateUser(email, password);
   if (user) {
-    //res.cookie('user_id', user['id']);
     req.session["user_id"] = user['id'];
-    //console.log(req.session["user_id"],user['id']);
     res.redirect("/urls");
   } else {
     res.status(403).send("Error: Error Status 403");
@@ -186,14 +178,13 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  //res.clearCookie('user_id');
   req.session = null;
   res.redirect("/urls");
 });
 
 app.post("/register", (req, res) => {
   const {email, password} = req.body;
-  const findeUser = findeUserByEmail(email);
+  const findeUser = findeUserByEmail(email, users);
   if (password === '' || (findeUser)) {
     res.status(404).send("Error: Error Status 404");
   } else {
