@@ -8,13 +8,14 @@
 
 <body> 
   <%- include('partials/_header') %>
+  <% if (error === "") {%>
   <div class="card text-center">
       <div class="card-header"></div>
       <div class="card-body">
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
       </div>
-      
+   
    <div class="card-footer text-muted"> 
 
     <main style="margin: 1em;">
@@ -25,11 +26,19 @@
           <label for="longURL">New URL</label>
           <input class="form-control" type="text" name="longURL" value = <%= longURL %>  style="width: 300px; margin: 1em">
           <button type="submit" class="btn btn-primary">Submit</button>
-        
+    
         </div>
       </form>
     </main>
-      
+  <% } else { %>
+    <div class="card text-center">
+      <div class="card-header"></div>
+      <div class="card-body">
+        <h5 class="card-title">TinyURL</h5>
+        <p class="card-text"><%=error%><a href="/u/<%= shortURL %>"></a></p>
+      </div>
+   <div class="card-footer text-muted"> 
+  <% } %>
 
     </div>
    

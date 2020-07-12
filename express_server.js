@@ -2,6 +2,7 @@ const express = require("express");
 const { getUserByEmail } = require('./helpers.js');
 const { authenticateUser } = require('./authenticateUser.js');
 const { addNewUser } = require('./addNewUser.js');
+const { checkOwnShip} = require('./checkOwnShip.js');
 
 const { bdForUser } = require('./bdForUser.js');
 const app = express();
@@ -25,7 +26,7 @@ app.use(cookieParser());
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" },
-  i3Bopr: { longURL: "https://www.google.ca", userID: "user3" }
+  i3Bopr: { longURL: "https://www.google.ca", userID: "user1" }
 };
 
 const users = {
@@ -93,9 +94,19 @@ app.get("/urls/login" , (req, res) => {
 
 //Edit existing URL
 app.post("/urls/:shortURL/update", (req, res) => {
+  const userID = req.session["user_id"];
+  const shortURL = req.params.shortURL;
   if (req.session["user_id"] !== undefined) {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
+  } else {
+    let templateVars = {
+      userId: userID,
+      users: users,
+      shortURL: shortURL,
+      error: `The user is not logged in`
+    };
+    res.render("urls_show", templateVars);
   }
 });
  
@@ -109,10 +120,21 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //Add new URL
 app.post("/urls", (req, res) => {
-  let newUrl = Math.random().toString(36).substr(2,6);
-  urlDatabase[newUrl] = {longURL: req.body.longURL,
-    userID: req.session["user_id"]};
-  res.redirect(`/urls/${newUrl}`);
+  const userID = req.session["user_id"];
+  const shortURL = req.params.shortURL;
+  if (req.session["user_id"]) {
+    let newUrl = Math.random().toString(36).substr(2,6);
+    urlDatabase[newUrl] = {longURL: req.body.longURL,userID: req.session["user_id"]};
+    res.redirect(`/urls/${newUrl}`);
+  } else {
+    let templateVars = {
+      userId: userID,
+      users: users,
+      shortURL: shortURL,
+      error: `The user is not logged in`
+    };
+    res.render("urls_show", templateVars);
+  }
 });
 
 //login with authentication
@@ -129,7 +151,7 @@ app.post("/login", (req, res) => {
 
 app.post("/logout", (req, res) => {
   req.session = null;
-  res.redirect("/urls");
+  res.redirect("/urls/login");
 });
 
 //Add new user
@@ -146,16 +168,34 @@ app.post("/register", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+  let longURL;
+  const userID = req.session["user_id"];
+  const shortURL = req.params.shortURL;
+  if (urlDatabase[req.params.shortURL]) {
+    longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL);
+  } else {
+    let templateVars = {
+      userId: userID,
+      users: users,
+      shortURL: shortURL,
+      error: `URL for the given ID:${req.params.shortURL} does not exist`
+    };
+    res.render("urls_show", templateVars);
+  }
+  
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const userID = req.session["user_id"];
+  const checkOwn =  checkOwnShip(shortURL, userID, urlDatabase);
   let templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    userId: req.session["user_id"],
-    users: users
+    shortURL: shortURL,
+    longURL: checkOwn[1],
+    userId: userID,
+    users: users,
+    error: checkOwn[0]
   };
   res.render("urls_show", templateVars);
 });
