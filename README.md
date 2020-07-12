@@ -4,7 +4,7 @@
 
 ## Final Product
 
-!["screenshot description"](#)
+!["screenshot of URLs Page"](https://github.com/MargaritaSt/tinyapp/blob/master/docs/urls-page.png?raw=true)
 !["screenshot description"](#)
 
 ## Dependencies
