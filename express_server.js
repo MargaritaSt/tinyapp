@@ -1,4 +1,9 @@
 const express = require("express");
+const { getUserByEmail } = require('./helpers.js');
+const { authenticateUser } = require('./authenticateUser.js');
+const { addNewUser } = require('./addNewUser.js');
+
+const { bdForUser } = require('./bdForUser.js');
 const app = express();
 const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
@@ -13,15 +18,9 @@ app.use(cookieSession({
   keys: ['key1', 'key2']
 }));
 
-
 //to work with cookies
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
-////
-
-//Midleware for password hash
-const bcrypt = require('bcrypt');
-/////
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -42,59 +41,6 @@ const users = {
   }
 };
 
-const  generateRandomString = function() {
-  return Math.random().toString(36).substr(2,6);
-};
-
-//app.use((req, res, next) => {
- // req.currentUser = users[req.session[id]];
- // next();
-//});
-const findeUserByEmail = function(email, dataBase) {
-  for (let userId in dataBase) {
-    if (dataBase[userId].email === email) {
-      return dataBase[userId];
-    }
-  }
-  return false;
-};
-
-const authenticateUser = function(email, password) {
-  const userId = findeUserByEmail(email, users);
-  let passmatch;
-  if (password !== "" && userId !== false) {
-    passmatch  = bcrypt.compareSync(password, userId.password);
-  }
-  if (userId && passmatch === true) {
-    return userId;
-  }
-  return false;
-};
-
-const addNewUser = function(email, password) {
-  let userId = generateRandomString();
-  const hashedPassword = bcrypt.hashSync(password,10);
-  const newUser = {
-    id: userId,
-    email,
-    password: hashedPassword
-  };
-  users[userId] = newUser;
-  return userId;
-  
-};
-
-const dbForId = function(userId) {
-  let newObject = {};
-  
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === userId) {
-      newObject[url] = urlDatabase[url];
-    }
-  }
-  return (newObject);
-};
-
 app.get('urls.json', (req, res) => {
   res.json(users);
 });
@@ -106,8 +52,9 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//Open page for URLS
 app.get("/urls", (req, res) => {
-  const newDB = dbForId(req.session["user_id"]);
+  const newDB = bdForUser(req.session["user_id"],urlDatabase);
   let templateVars = {
     urls: newDB, //This is filtered by signed userID urlDatabase objectvto display the URLS for the specific user only
     userId: req.session["user_id"],
@@ -144,14 +91,15 @@ app.get("/urls/login" , (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+//Edit existing URL
 app.post("/urls/:shortURL/update", (req, res) => {
   if (req.session["user_id"] !== undefined) {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
-    //res.json(req.body);
     res.redirect("/urls");
   }
 });
  
+//Delete URL
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (req.session["user_id"] !== undefined) {
     delete urlDatabase[req.params.shortURL];
@@ -159,16 +107,18 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
+//Add new URL
 app.post("/urls", (req, res) => {
-  let newUrl = generateRandomString();
+  let newUrl = Math.random().toString(36).substr(2,6);
   urlDatabase[newUrl] = {longURL: req.body.longURL,
     userID: req.session["user_id"]};
   res.redirect(`/urls/${newUrl}`);
 });
 
+//login with authentication
 app.post("/login", (req, res) => {
   const {email, password} = req.body;
-  const user = authenticateUser(email, password);
+  const user = authenticateUser(email, password,users);
   if (user) {
     req.session["user_id"] = user['id'];
     res.redirect("/urls");
@@ -182,13 +132,14 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
+//Add new user
 app.post("/register", (req, res) => {
   const {email, password} = req.body;
-  const findeUser = findeUserByEmail(email, users);
+  const findeUser = getUserByEmail(email, users);
   if (password === '' || (findeUser)) {
     res.status(404).send("Error: Error Status 404");
   } else {
-    const userId = addNewUser(email, password);
+    const userId = addNewUser(email, password, users);
     req.session["user_id"] = userId;
     res.redirect("/urls");
   }
