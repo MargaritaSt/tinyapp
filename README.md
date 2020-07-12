@@ -4,8 +4,9 @@
 
 ## Final Product
 
+!["screenshot of Login Page"](https://github.com/MargaritaSt/tinyapp/blob/master/docs/Login%20page.png?raw=true)
 !["screenshot of URLs Page"](https://github.com/MargaritaSt/tinyapp/blob/master/docs/urls-page.png?raw=true)
-!["screenshot description"](#)
+!["screenshot of Create New URL Page"](https://github.com/MargaritaSt/tinyapp/blob/master/docs/Create%20new%20URL.png?raw=true)
 
 ## Dependencies
 
