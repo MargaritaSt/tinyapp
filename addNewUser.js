@@ -1,11 +1,13 @@
 const express = require("express");
 const app = express();
+
 //to work with encrypted cookies
 const cookieSession = require('cookie-session');
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
 }));
+
 //Midleware for password hash
 const bcrypt = require('bcrypt');
 

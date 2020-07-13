@@ -1,13 +1,4 @@
-const checkOwnUrl = function(shortURL, userID, urlDB) {
-  if (userID === undefined) {
-    return false;
-  }
-  if (urlDB[shortURL].userID === userID) {
-    return true;
-  } else {
-    return false;
-  }
-};
+const { checkOwnUrl } = require('./checkOwnUrl.js');
 const checkOwnShip = function(shortURL, userID, dataBase) {
 //Check if URL exists. If it doesn't it should return the error
   //If exists then check URL ownership

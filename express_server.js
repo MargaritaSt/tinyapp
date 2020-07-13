@@ -2,8 +2,8 @@ const express = require("express");
 const { getUserByEmail } = require('./helpers.js');
 const { authenticateUser } = require('./authenticateUser.js');
 const { addNewUser } = require('./addNewUser.js');
-const { checkOwnShip} = require('./checkOwnShip.js');
-
+const { checkOwnShip } = require('./checkOwnShip.js');
+const { loggedUser } = require('./loggedUser.js');
 const { bdForUser } = require('./bdForUser.js');
 const app = express();
 const PORT = 8080; // default port 8080
@@ -18,10 +18,6 @@ app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
 }));
-
-//to work with cookies
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -53,7 +49,7 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-//Open page for URLS
+//Open page with the list of URLs
 app.get("/urls", (req, res) => {
   const newDB = bdForUser(req.session["user_id"],urlDatabase);
   let templateVars = {
@@ -64,6 +60,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//Returns the page where you can create a new URL
 app.get("/urls/new" , (req, res) => {
   if (req.session["user_id"]) {
     let templateVars = {
@@ -92,7 +89,7 @@ app.get("/urls/login" , (req, res) => {
   res.render("urls_login", templateVars);
 });
 
-//Edit existing URL
+//Editing existing URLs
 app.post("/urls/:shortURL/update", (req, res) => {
   const userID = req.session["user_id"];
   const shortURL = req.params.shortURL;
@@ -100,25 +97,25 @@ app.post("/urls/:shortURL/update", (req, res) => {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
   } else {
-    let templateVars = {
-      userId: userID,
-      users: users,
-      shortURL: shortURL,
-      error: `The user is not logged in`
-    };
+    const templateVars = loggedUser(userID, shortURL, users);
     res.render("urls_show", templateVars);
   }
 });
- 
-//Delete URL
+
+//Deleting existing URLs
 app.post("/urls/:shortURL/delete", (req, res) => {
+  const userID = req.session["user_id"];
+  const shortURL = req.params.shortURL;
   if (req.session["user_id"] !== undefined) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
+  } else {
+    const templateVars = loggedUser(userID, shortURL, users);
+    res.render("urls_show", templateVars);
   }
 });
 
-//Add new URL
+//Adding new URLs
 app.post("/urls", (req, res) => {
   const userID = req.session["user_id"];
   const shortURL = req.params.shortURL;
@@ -127,17 +124,12 @@ app.post("/urls", (req, res) => {
     urlDatabase[newUrl] = {longURL: req.body.longURL,userID: req.session["user_id"]};
     res.redirect(`/urls/${newUrl}`);
   } else {
-    let templateVars = {
-      userId: userID,
-      users: users,
-      shortURL: shortURL,
-      error: `The user is not logged in`
-    };
+    const templateVars = loggedUser(userID, shortURL, users);
     res.render("urls_show", templateVars);
   }
 });
 
-//login with authentication
+//Login with authentication
 app.post("/login", (req, res) => {
   const {email, password} = req.body;
   const user = authenticateUser(email, password,users);
@@ -154,7 +146,7 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls/login");
 });
 
-//Add new user
+//Adding new user
 app.post("/register", (req, res) => {
   const {email, password} = req.body;
   const findeUser = getUserByEmail(email, users);
@@ -167,6 +159,7 @@ app.post("/register", (req, res) => {
   }
 });
 
+//Redirecting a user to longURL by cliking on shortUrl
 app.get("/u/:shortURL", (req, res) => {
   let longURL;
   const userID = req.session["user_id"];
@@ -183,9 +176,10 @@ app.get("/u/:shortURL", (req, res) => {
     };
     res.render("urls_show", templateVars);
   }
-  
 });
 
+//Returns web page with the specific shortURL details
+//And with the form to edit the URL
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const userID = req.session["user_id"];
